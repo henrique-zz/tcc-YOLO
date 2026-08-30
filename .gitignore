@@ -4,6 +4,7 @@ graficos/
 images-results/
 overleaf/
 .venv-amd/
+.vscode/
 
 # Ignorar os resultados e pesos pesados da IA
 runs/
