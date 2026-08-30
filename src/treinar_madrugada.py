@@ -1,31 +1,81 @@
 from ultralytics import YOLO
+import torch
+import time
+import os
+import gc
+import yaml
 
-def treinar_madrugada():
-    dataset_path = r"C:\Users\Henrique S\Downloads\tcc\tcc-refatorado\datasets\flamevision-dataset\Detection\dataset.yaml"
+torch.backends.cudnn.enabled = False
+
+def carregar_config(caminho_yaml="configs/config.yaml"):
+    # Lê o seu arquivo YAML existente
+    with open(caminho_yaml, 'r', encoding='utf-8') as arquivo:
+        return yaml.safe_load(arquivo)
+
+def treinar_lote():
+    # Extrai os dados lidos
+    config = carregar_config()
     
-    # Colocando o caminho ABSOLUTO aqui, o YOLO é obrigado a respeitar e não cria a pasta "detect"
-    pasta_destino = r"C:\Users\Henrique S\Downloads\tcc\tcc-refatorado\runs\train"
+    # Navega pela hierarquia do YAML (dataset, processamento, treinamento)
+    caminho_dataset = os.path.join(config['dataset']['pasta_saida'], "dataset.yaml")
+    modelo_base = config['treinamento']['modelo_base']
+    epochs = config['treinamento']['epochs']
+    batch_size = config['treinamento']['batch_size']
+    imgsz = config['treinamento']['imgsz']
+    prefixo_run = config['treinamento']['nome_experimento']
+    device = config['treinamento']['device']
+    workers = config['treinamento']['workers']
     
-    for i in range(4, 11):
-        print(f"\n{'='*50}")
-        print(f"🔥 INICIANDO RODADA {i} DE 10 🔥")
-        print(f"{'='*50}\n")
+    # Mantém o caminho absoluto do projeto para evitar erros de diretório
+    caminho_projeto = r"C:\Users\Henrique S\Downloads\tcc\tcc-refatorado\runs\train"
+    
+    # Mantém o loop fixo em 10 rodadas para as estatísticas
+    for i in range(2, 11):
+        nome_pasta = f"{prefixo_run}-{i}"
         
-        model = YOLO("pesos/yolov8n.pt")
-        nome_pasta = f"flamevision-yolov8n-run{i}"
+        print(f"\n=======================================================")
+        print(f"🚀 INICIANDO {nome_pasta.upper()} ({epochs} ÉPOCAS)")
+        print(f"=======================================================\n")
+        
+        # Carrega os pesos iniciais especificados no YAML
+        model = YOLO(modelo_base) 
+        
+        tempo_inicio = time.time()
         
         model.train(
-            data=dataset_path,
-            epochs=100,
-            imgsz=640,
-            batch=16,
-            device=0,
-            workers=0,
-            project=pasta_destino, # Passando o caminho absoluto
-            name=nome_pasta
+            data=caminho_dataset,
+            epochs=epochs,
+            batch=batch_size,          
+            imgsz=imgsz,
+            project=caminho_projeto,  
+            name=nome_pasta,                     
+            device=device,
+            workers=workers,        
+            amp=True,          # Forçado como True para manter a otimização
+            cache='disk'       # Forçado no disco para leitura otimizada
         )
         
-        print(f"\n✅ Rodada {i} salva com sucesso em {pasta_destino}\\{nome_pasta}\n")
+        tempo_fim = time.time()
+        tempo_total_horas = (tempo_fim - tempo_inicio) / 3600
+        
+        print(f"\n✅ {nome_pasta} finalizada! Levou {tempo_total_horas:.2f} horas.")
+        
+        # Salvamento automático do tempo
+        caminho_pasta_tempo = os.path.join(caminho_projeto, nome_pasta, "tempo")
+        os.makedirs(caminho_pasta_tempo, exist_ok=True)
+        caminho_arquivo = os.path.join(caminho_pasta_tempo, "tempo_treinamento.txt")
+        
+        with open(caminho_arquivo, "w", encoding="utf-8") as arquivo:
+            arquivo.write(f"Tempo total de treinamento: {tempo_total_horas:.2f} horas\n")
+
+        # Limpeza pesada de memória entre as iterações
+        del model
+        torch.cuda.empty_cache()
+        gc.collect()
+        print("🧹 Memória liberada!")
+        
+        print("⏳ Aguardando 30 segundos antes da próxima run...")
+        time.sleep(30)
 
 if __name__ == "__main__":
-    treinar_madrugada()
+    treinar_lote()

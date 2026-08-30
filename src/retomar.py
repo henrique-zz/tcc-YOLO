@@ -3,14 +3,15 @@ from ultralytics import YOLO
 def retomar_treinamento():
     print("🚑 Iniciando resgate do treinamento...")
     
-    # Aponta para o arquivo last.pt da rodada que foi interrompida
-    caminho_peso_salvo = r"C:\Users\Henrique S\Downloads\tcc\tcc-refatorado\runs\train\flamevision-yolov8n-run3\weights\last.pt"
+    # Aponta para o arquivo last.pt da rodada
+    caminho_peso_salvo = r"C:\Users\Henrique S\Downloads\tcc\tcc-refatorado\runs\train\flame-yolov8n-run2\weights\last.pt"
     
-    # Carrega o modelo com o estado exato de quando a luz caiu
+    caminho_dataset = r"C:\Users\Henrique S\Downloads\tcc\tcc-refatorado\datasets\flame-dataset-new\Detection\dataset.yaml"
+    
     model = YOLO(caminho_peso_salvo)
     
-    # O comando resume=True é mágico: ele já sabe o batch, as epochs e a pasta correta
-    model.train(resume=True)
+    # O resume=True continua aqui
+    model.train(resume=True, data=caminho_dataset)
     
     print("✅ Resgate concluído!")
 

@@ -1,6 +1,9 @@
 # Ignorar as pastas de imagens e datasets
-corsican-dataset/
-bdfire_yolo/
+datasets/
+graficos/
+images-results/
+overleaf/
+.venv-amd/
 
 # Ignorar os resultados e pesos pesados da IA
 runs/
